@@ -1,0 +1,4 @@
+Milk Dairy 3.99 2
+Bread Bakery 2.99 1
+Bananas Produce 0.99 -1
+IceCream Frozen 4.99 2
