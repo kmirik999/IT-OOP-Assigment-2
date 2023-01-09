@@ -8,12 +8,14 @@
 
 using namespace std;
 using namespace std::chrono;
+
 // define Product class
 class Product {
 private:
     string name;
     string location;
     float price;
+
     chrono::system_clock::time_point dueDate;
 
 public:
@@ -27,13 +29,16 @@ public:
     chrono::system_clock::time_point getDueDate() { return dueDate; }
     void setDueDate(chrono::system_clock::time_point newDueDate) { dueDate = newDueDate; }
 };
+
 // define Shelf class
 class Shelf {
 private:
     string type;
     vector<Product> productsVec;
+
 public:
-    Shelf(string type) : type(type) {}
+    Shelf(string type) : type(type){}
+
     string getType() { return type; }
     vector<Product> getProducts() { return productsVec; }
     void addProduct(Product product)
@@ -48,16 +53,86 @@ public:
         }
     }
 };
+
+class Refrigerator{
+private:
+    vector<Product> productsVec;
+public:
+    vector<Product> getProducts() { return productsVec; }
+    void addProduct(Product product)
+    {
+        productsVec.push_back(product);
+    }
+    void removeProduct(Product product) {
+        for (int i = 0; i < productsVec.size(); i++) {
+            if (productsVec[i].getName() == product.getName()) {
+                productsVec.erase(productsVec.begin() + i);
+            }
+        }
+    }
+
+    void setTemperature(float temperature) {
+        // set temperature only if it's within the allowed range for a refrigerator
+        if (temperature >= 0 && temperature <= 10) {
+            // set the temperature for this refrigerator
+            cout << "Setting temperature for refrigerator: " << temperature << endl;
+        }
+    }
+
+
+};
+
+class Freezer{
+private:
+    vector<Product> productsVec;
+public:
+    vector<Product> getProducts() { return productsVec; }
+    void addProduct(Product product)
+    {
+        productsVec.push_back(product);
+    }
+    void removeProduct(Product product) {
+        for (int i = 0; i < productsVec.size(); i++) {
+            if (productsVec[i].getName() == product.getName()) {
+                productsVec.erase(productsVec.begin() + i);
+            }
+        }
+    }
+
+    void setTemperature(float temperature) {
+        // set temperature only if it's within the allowed range for a freezer
+        if (temperature <= -20) {
+            // set the temperature for this freezer
+            cout << "Setting temperature for freezer: " << temperature << endl;
+        }
+    }
+};
+
 // define Supermarket class
 class Supermarket {
 private:
     vector<Shelf> shelves;
+
 public:
+    Refrigerator refrigerator;
+    Freezer freezer;
+
+    void createFreezer()
+    {
+        refrigerator = Refrigerator();
+    }
+
+    void createRefrigerator()
+    {
+        freezer = Freezer();
+    }
+
     vector<Shelf> getShelves() { return shelves; }
     void addShelf(Shelf shelf)
     {
         shelves.push_back(shelf);
     }
+
     void removeShelf(Shelf shelf) {
         for (int i = 0; i < shelves.size(); i++) {
             if (shelves[i].getType() == shelf.getType()) {
@@ -67,9 +142,24 @@ public:
     }
     void nextDay()
     {
+        vector<Product> productsFreezer = freezer.getProducts();
+        for (Product& product : productsFreezer) {
+            if (product.getDueDate() < chrono::system_clock::now()) {
+                freezer.removeProduct(product);
+            }
+        }
+
+        vector<Product> productsRefrigerator = refrigerator.getProducts();
+        for (Product& product : productsRefrigerator) {
+            if (product.getDueDate() < chrono::system_clock::now()) {
+                refrigerator.removeProduct(product);
+            }
+        }
+
         for (Shelf& shelf : shelves) {
             // get the products on this shelf
             vector<Product> products = shelf.getProducts();
+
             // remove any expired products from the shelf
             for (Product& product : products) {
                 if (product.getDueDate() < chrono::system_clock::now()) {
@@ -78,95 +168,164 @@ public:
             }
         }
     }
-    void Take(Product product, string shelfType) {
+
+    void Take(string productName, string shelfType) {
+        if (shelfType == "Freezer")
+        {
+            vector<Product> productsFreezer = freezer.getProducts();
+            for (Product product : productsFreezer)
+            {
+                if (product.getName() == productName)
+                {
+                    freezer.removeProduct(product);
+                    return;
+                }
+            }
+        }
+
+        if (shelfType == "Refrigerator")
+        {
+            vector<Product> productsRefrigerator = refrigerator.getProducts();
+            for (Product product : productsRefrigerator)
+            {
+                if (product.getName() == productName)
+                {
+                    refrigerator.removeProduct(product);
+                    return;
+                }
+            }
+        }
+
         for (Shelf& shelf : shelves) {
             if (shelf.getType() == shelfType) {
-                shelf.removeProduct(product);
-                break;
-            }
-        }
-    }
-    void view()
-    {
-        bool exist = false;
-        for (Shelf& shelf : shelves)
-        {
-            exist = true;
-            bool empty = true;
-            cout << "Container type: " << shelf.getType() << endl;
-            vector<Product> products = shelf.getProducts();
-            for (Product& product : products)
-            {
-                empty = false;
-                cout << "Product name: " << product.getName() << endl;
-            }
-            if (empty) cout << "Container is empty!" << endl;
-            cout << "---------------------" << endl;
-        }
-        if (!exist) cout << "Container isn`t exist!" << endl;
-    }
-    void viewContainerType() {
-        for (Shelf& shelf : shelves) {
-            cout << "Container type: " << shelf.getType() << endl;
-        }
-    }
-    void viewContainerType(string name)
-    {
-        bool exist = false;
-        for (Shelf& shelf : shelves)
-        {
-            if (shelf.getType() == name)
-            {
-                exist = true;
-                bool empty = true;
-                cout << "Container type: " << shelf.getType() << endl;
                 vector<Product> products = shelf.getProducts();
-                for (Product& product : products)
+                for (Product product : products)
                 {
-                    empty = false;
-                    cout << "Product name: " << product.getName() << endl;
+                    if (product.getName() == productName)
+                    {
+                        shelf.removeProduct(product);
+                        return;
+                    }
                 }
-                if (empty) cout << "Container is empty!" << endl;
-                cout << "---------------------" << endl;
-            }
 
-        }
-        if (!exist) cout << "Container isn`t exist!" << endl;
-    }
-
-    void viewAllInfo()
-    {
-        for (Shelf shelf : shelves) {
-            vector<Product> products = shelf.getProducts();
-            for (Product product : products) {
-                cout << "Product Name: " << product.getName() << endl;
-                cout << "Location: " << product.getLocation() << endl;
-                cout << "Price: $" << product.getPrice() << endl;
-                time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
-                tm tm;
-                localtime_s(&tm, &dueDate);
-                stringstream dueDateStream;
-                dueDateStream << put_time(&tm, "%c %Z");
-                cout << "Due Date: " << dueDateStream.str() << endl;
-                cout << endl;
             }
         }
     }
-    void Move(Product product, string fromShelfType, string toShelfType) {
-        // first remove the product from the "from" shelf
-        Take(product, fromShelfType);
+
+    void Move(string productName, string fromShelfType, string toShelfType) {
+
+        if (fromShelfType == "Freezer")
+        {
+            vector<Product> productsFreezer = freezer.getProducts();
+            for (Product product : productsFreezer)
+            {
+                if (product.getName() == productName)
+                {
+                    product.setLocation(toShelfType);
+
+                    if (toShelfType == "Refrigerator")
+                    {
+                        refrigerator.addProduct(product);
+                    }
+                    else
+                    {
+                        for (Shelf& shelfTo : shelves)
+                        {
+                            if (shelfTo.getType() == toShelfType)
+                            {
+                                shelfTo.addProduct(product);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            Take(productName, fromShelfType);
+        }
+
+        if (fromShelfType == "Refrigerator")
+        {
+            vector<Product> productsRefrigerator = refrigerator.getProducts();
+            for (Product product : productsRefrigerator)
+            {
+                if (product.getName() == productName)
+                {
+                    product.setLocation(toShelfType);
+
+                    if (toShelfType == "Freezer")
+                    {
+                        freezer.addProduct(product);
+                    }
+                    else
+                    {
+                        for (Shelf& shelfTo : shelves)
+                        {
+                            if (shelfTo.getType() == toShelfType)
+                            {
+                                shelfTo.addProduct(product);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            Take(productName, fromShelfType);
+        }
+
         // then add the product to the "to" shelf
-        for (Shelf& shelf : shelves) {
-            if (shelf.getType() == toShelfType) {
-                product.setLocation(toShelfType);
-                shelf.addProduct(product);
-                break;
+        for (Shelf& shelf : shelves)
+        {
+            if (shelf.getType() == fromShelfType)
+            {
+                vector<Product> products = shelf.getProducts();
+                for (Product product : products)
+                {
+                    if (product.getName() == productName)
+                    {
+                        product.setLocation(toShelfType);
+
+                        if (toShelfType == "Freezer")
+                        {
+                            freezer.addProduct(product);
+                        }
+                        else if (toShelfType == "Refrigerator")
+                        {
+                            refrigerator.addProduct(product);
+                        }
+                        else
+                        {
+                            for (Shelf& shelfTo : shelves)
+                            {
+                                if (shelfTo.getType() == toShelfType)
+                                {
+                                    shelfTo.addProduct(product);
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+                }
+                Take(productName, fromShelfType);
             }
         }
     }
+
     void Add(Product product, string shelfType)
     {
         bool shelfExists = false;
+
+        if (shelfType == "Freezer")
+        {
+            freezer.addProduct(product);
+            return;
+        }
+        else if (shelfType == "Refrigerator")
+        {
+            refrigerator.addProduct(product);
+            return;
+        }
+
         // check if the shelf exists
         for (Shelf& shelf : shelves) {
             if (shelf.getType() == shelfType) {
@@ -174,6 +333,7 @@ public:
                 break;
             }
         }
+
         // if the shelf doesn't exist, create it and add the product to it
         if (!shelfExists) {
             Shelf newShelf(shelfType);
@@ -190,10 +350,176 @@ public:
             }
         }
     }
+
+    void view()
+    {
+        bool exist = false;
+        bool empty = true;
+
+        cout << "Container type: Freezer" << endl;
+        vector<Product> productsFreezer = freezer.getProducts();
+        for (Product& product : productsFreezer)
+        {
+            empty = false;
+            cout << "Product name: " << product.getName() << endl;
+        }
+        cout << "---------------------" << endl;
+        if (empty) cout << "Freezer is empty!" << endl;
+
+        empty = true;
+
+        cout << "Container type: Refrigerator" << endl;
+        vector<Product> productsRefrigerator = refrigerator.getProducts();
+        for (Product& product : productsRefrigerator)
+        {
+            empty = false;
+            cout << "Product name: " << product.getName() << endl;
+        }
+        cout << "---------------------" << endl;
+        if (empty) cout << "Refrigerator is empty!" << endl;
+
+        empty = true;
+
+        for (Shelf& shelf : shelves)
+        {
+            exist = true;
+            cout << "Container type: " << shelf.getType() << endl;
+            vector<Product> products = shelf.getProducts();
+            for (Product& product : products)
+            {
+                empty = false;
+                cout << "Product name: " << product.getName() << endl;
+            }
+
+            if (empty) cout << "Container is empty!" << endl;
+            cout << "---------------------" << endl;
+
+        }
+    }
+
+    void viewContainerType() {
+        cout << "Container type: Freezer" << endl;
+        cout << "Container type: Refrigerator" << endl;
+
+        for (Shelf& shelf : shelves) {
+            cout << "Container type: " << shelf.getType() << endl;
+        }
+    }
+
+    void viewContainerType(string name)
+    {
+
+        if (name == "Freezer")
+        {
+            bool empty = true;
+            cout << "Container type: Freezer" << endl;
+            vector<Product> productsFreezer = freezer.getProducts();
+            for (Product& product : productsFreezer)
+            {
+                empty = false;
+                cout << "Product name: " << product.getName() << endl;
+            }
+
+            if (empty) cout << "Container is empty!" << endl;
+            cout << "---------------------" << endl;
+            return;
+        }
+
+        if (name == "Refrigerator")
+        {
+            bool empty = true;
+            cout << "Container type: Refrigerator" << endl;
+            vector<Product> productsRefrigerator = refrigerator.getProducts();
+            for (Product& product : productsRefrigerator)
+            {
+                empty = false;
+                cout << "Product name: " << product.getName() << endl;
+            }
+
+            if (empty) cout << "Container is empty!" << endl;
+            cout << "---------------------" << endl;
+            return;
+        }
+
+        bool exist = false;
+        for (Shelf& shelf : shelves)
+        {
+            if (shelf.getType() == name)
+            {
+                exist = true;
+                bool empty = true;
+                cout << "Container type: " << shelf.getType() << endl;
+                vector<Product> products = shelf.getProducts();
+                for (Product& product : products)
+                {
+                    empty = false;
+                    cout << "Product name: " << product.getName() << endl;
+                }
+
+                if (empty) cout << "Container is empty!" << endl;
+                cout << "---------------------" << endl;
+            }
+
+        }
+
+        if (!exist) cout << "Container isn`t exist!" << endl;
+    }
+
+    void viewAllInfo()
+    {
+        vector<Product> productsFreezer = freezer.getProducts();
+        for (Product product : productsFreezer) {
+            cout << "Product Name: " << product.getName() << endl;
+            cout << "Location: " << product.getLocation() << endl;
+            cout << "Price: $" << product.getPrice() << endl;
+            time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
+            tm tm;
+            localtime_r(&dueDate, &tm);
+            stringstream dueDateStream;
+            dueDateStream << put_time(&tm, "%c %Z");
+            cout << "Due Date: " << dueDateStream.str() << endl;
+            cout << endl;
+        }
+
+        vector<Product> productsRefrigerator = refrigerator.getProducts();
+        for (Product product : productsRefrigerator) {
+            cout << "Product Name: " << product.getName() << endl;
+            cout << "Location: " << product.getLocation() << endl;
+            cout << "Price: $" << product.getPrice() << endl;
+            time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
+            tm tm;
+            localtime_r(&dueDate, &tm);
+            stringstream dueDateStream;
+            dueDateStream << put_time(&tm, "%c %Z");
+            cout << "Due Date: " << dueDateStream.str() << endl;
+            cout << endl;
+        }
+
+        for (Shelf shelf : shelves) {
+            vector<Product> products = shelf.getProducts();
+            for (Product product : products) {
+                cout << "Product Name: " << product.getName() << endl;
+                cout << "Location: " << product.getLocation() << endl;
+                cout << "Price: $" << product.getPrice() << endl;
+                time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
+                tm tm;
+                localtime_r(&dueDate, &tm);
+                stringstream dueDateStream;
+                dueDateStream << put_time(&tm, "%c %Z");
+                cout << "Due Date: " << dueDateStream.str() << endl;
+                cout << endl;
+            }
+        }
+    }
+
 };
+
+
 
 int main() {
     Supermarket supermarket;
+    supermarket.createFreezer();
+    supermarket.createRefrigerator();
     // open file for reading
     ifstream file("supermarket_data.txt");
     if (!file.is_open()) {
@@ -220,8 +546,15 @@ int main() {
         supermarket.Add(product, location);
     }
 
-    supermarket.view();
-    supermarket.viewContainerType();
+    //supermarket.view();
+
+
+    //supermarket.viewContainerType();
+    supermarket.viewAllInfo();
+    cout << "---------------------" << endl;
+    cout << "---------------------" << endl;
+    //supermarket.Take("IceCream", "Freezer");
+    supermarket.Move("Milk", "Refrigerator", "Freezer");
     supermarket.viewAllInfo();
 
 
