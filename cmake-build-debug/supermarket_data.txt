@@ -1,0 +1,7 @@
+IceCream Freezer 4.99 2
+Milk Refrigerator 3.99 -1
+Oil Refrigerator 2.11 1
+Bread Bakery 2.99 1
+Bananas Produce 0.99 -2
+Apples Produce 1 2
+Orange Produce 2 -1
