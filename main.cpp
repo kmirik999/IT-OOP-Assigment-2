@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 #include <chrono>
 #include <iomanip>
@@ -15,19 +16,19 @@ class Product {
 private:
     string name;
     string location;
-    float price;
+    float price{};
 
     chrono::system_clock::time_point dueDate;
 
 public:
-    Product(string name, string location) : name(name), location(location){}
+    Product(string name, string location) : name(std::move(name)), location(std::move(location)){}
     Product(string name, string location, float price, chrono::system_clock::time_point dueDate)
-            : name(name), location(location), price(price), dueDate(dueDate) {}
+            : name(std::move(name)), location(std::move(location)), price(price), dueDate(dueDate) {}
 
     string getName() { return name; }
     string getLocation() { return location; }
-    float getPrice() { return price; }
-    void setLocation(string newLocation) { location = newLocation; }
+    float getPrice() const { return price; }
+    void setLocation(string newLocation) { location = std::move(newLocation); }
     chrono::system_clock::time_point getDueDate() { return dueDate; }
     void setDueDate(chrono::system_clock::time_point newDueDate) { dueDate = newDueDate; }
 };
@@ -37,7 +38,7 @@ private:
     vector<Product> stock;
 
 public:
-    Factory() {}
+    Factory();
 
     vector<Product> getStock() {
         return stock;
@@ -103,6 +104,8 @@ public:
     }
 };
 
+Factory::Factory() = default;
+
 
 class Storage {
 public:
@@ -117,7 +120,7 @@ private:
     vector<Product> productsVec;
 
 public:
-    Shelf(string type) : type(type) {}
+    explicit Shelf(string type) : type(std::move(type)) {}
 
     string getType() { return type; }
     vector<Product> getProducts() { return productsVec; }
@@ -224,7 +227,7 @@ public:
     }
 
     vector<Shelf> getShelves() { return shelves; }
-    void addShelf(Shelf shelf)
+    void addShelf(const Shelf& shelf)
     {
         shelves.push_back(shelf);
     }
@@ -265,7 +268,7 @@ public:
         }
     }
 
-    void Take(string productName, string shelfType) {
+    void Take(const string& productName, const string& shelfType) {
 
 
 
@@ -312,7 +315,7 @@ public:
         }
     }
 
-    void Move(string productName, string fromShelfType, string toShelfType) {
+    void Move(const string& productName, const string& fromShelfType, const string& toShelfType) {
 
         if (fromShelfType == "Freezer")
         {
@@ -411,7 +414,7 @@ public:
         }
     }
 
-    void Add(Product product, string shelfType)
+    void Add(const Product& product, const string& shelfType)
     {
         bool shelfExists = false;
 
@@ -496,75 +499,6 @@ public:
 
         }
     }
-
-    void viewContainerType() {
-        cout << "Container type: Freezer" << endl;
-        cout << "Container type: Refrigerator" << endl;
-
-        for (Shelf& shelf : shelves) {
-            cout << "Container type: " << shelf.getType() << endl;
-        }
-    }
-
-    void viewContainerType(string name)
-    {
-
-        if (name == "Freezer")
-        {
-            bool empty = true;
-            cout << "Container type: Freezer" << endl;
-            vector<Product> productsFreezer = freezer.getProducts();
-            for (Product& product : productsFreezer)
-            {
-                empty = false;
-                cout << "Product name: " << product.getName() << endl;
-            }
-
-            if (empty) cout << "Container is empty!" << endl;
-            cout << "---------------------" << endl;
-            return;
-        }
-
-        if (name == "Refrigerator")
-        {
-            bool empty = true;
-            cout << "Container type: Refrigerator" << endl;
-            vector<Product> productsRefrigerator = refrigerator.getProducts();
-            for (Product& product : productsRefrigerator)
-            {
-                empty = false;
-                cout << "Product name: " << product.getName() << endl;
-            }
-
-            if (empty) cout << "Container is empty!" << endl;
-            cout << "---------------------" << endl;
-            return;
-        }
-
-        bool exist = false;
-        for (Shelf& shelf : shelves)
-        {
-            if (shelf.getType() == name)
-            {
-                exist = true;
-                bool empty = true;
-                cout << "Container type: " << shelf.getType() << endl;
-                vector<Product> products = shelf.getProducts();
-                for (Product& product : products)
-                {
-                    empty = false;
-                    cout << "Product name: " << product.getName() << endl;
-                }
-
-                if (empty) cout << "Container is empty!" << endl;
-                cout << "---------------------" << endl;
-            }
-
-        }
-
-        if (!exist) cout << "Container isn`t exist!" << endl;
-    }
-
     void viewAllInfo()
     {
         vector<Product> productsFreezer = freezer.getProducts();
@@ -587,7 +521,7 @@ public:
             cout << "Location: " << product.getLocation() << endl;
             cout << "Price: $" << product.getPrice() << endl;
             time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
-            tm tm;
+            tm tm{};
             localtime_r(&dueDate, &tm);
             stringstream dueDateStream;
             dueDateStream << put_time(&tm, "%c %Z");
@@ -603,7 +537,7 @@ public:
                 cout << "Location: " << product.getLocation() << endl;
                 cout << "Price: $" << product.getPrice() << endl;
                 time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
-                tm tm;
+                tm tm{};
                 localtime_r(&dueDate, &tm);
                 stringstream dueDateStream;
                 dueDateStream << put_time(&tm, "%c %Z");
@@ -614,7 +548,6 @@ public:
     }
 
 };
-
 
 
 int main() {
@@ -648,8 +581,6 @@ int main() {
         Product product(name, location, price, dueDate);
         supermarket.Add(product, location);
     }
-
-    //supermarket.view();
 
     string command;
     cout << "Enter a command or type 'help' for a list of commands" << endl;
@@ -694,7 +625,7 @@ int main() {
         else if (command == "take") {
             supermarket.viewAllInfo();
 
-            string name, locationName;
+            string locationName;
 
             cout << "Select name of product which to remove from shelve or freezer or refrigerator: ";
             cin >> name;
@@ -750,7 +681,7 @@ int main() {
 
             supermarket.viewAllInfo();
 
-            string name, locationName, toLocationName;
+            string locationName, toLocationName;
 
             cout << "Select NAME of product which to remove from shelve or freezer or refrigerator: ";
             cin >> name;
