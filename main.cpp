@@ -30,7 +30,6 @@ public:
     float getPrice() const { return price; }
     void setLocation(string newLocation) { location = std::move(newLocation); }
     chrono::system_clock::time_point getDueDate() { return dueDate; }
-    void setDueDate(chrono::system_clock::time_point newDueDate) { dueDate = newDueDate; }
 };
 
 class Factory {
@@ -38,10 +37,39 @@ private:
     vector<Product> stock;
 
 public:
-    Factory();
+    Factory() = default;
 
     vector<Product> getStock() {
         return stock;
+    }
+
+    vector<Product> takeStock(int capacity)
+    {
+        if (!stock.empty())
+        {
+            vector<Product> takenStocks;
+
+            for (int i = 0; i < capacity; i++)
+            {
+                if (!stock.empty())
+                {
+                    Product temp = stock.back();
+                    stock.pop_back();
+                    takenStocks.push_back(temp);
+                }
+                else
+                {
+                    return takenStocks;
+                }
+
+
+            }
+            return takenStocks;
+        }
+        else
+        {
+            return {};
+        }
     }
 
     void generate(int numProducts) {
@@ -49,6 +77,7 @@ public:
         string location;
         float price;
         int dueDateDays;
+        int i = 0;
         vector<Product> listRandomProducts;
 
         // Generate random products and store them in the stock
@@ -58,7 +87,7 @@ public:
         uniform_real_distribution<> disPrice(1, 1000);
         uniform_int_distribution<> disDay(-5, 10);
 
-        ifstream fileRandomNames("random_names.txt");
+        ifstream fileRandomNames("data2.txt");
         if (!fileRandomNames.is_open()) {
             cout << "Error: unable to open file" << endl;
             return;
@@ -76,8 +105,9 @@ public:
             listRandomProducts.push_back(product);
         }
 
-        for (int i = 0; i < numProducts; i++)
+        for (; i < numProducts; i++)
         {
+            bool alreadyExist = false;
             int counter = 0;
             int id = disRandomProduct(gen);
 
@@ -86,6 +116,21 @@ public:
                 if (counter != id)
                 {
                     counter++;
+                    continue;
+                }
+
+                for (Product productStock : stock)
+                {
+                    if (productStock.getName() == product.getName())
+                    {
+                        alreadyExist = true;
+                        break;
+                    }
+                }
+
+                if (alreadyExist)
+                {
+                    i--;
                     continue;
                 }
 
@@ -98,13 +143,55 @@ public:
 
                 Product p = Product(name, location, price, dueDate);
                 stock.push_back(p);
+                break;
             }
 
         }
     }
 };
 
-Factory::Factory() = default;
+class Truck {
+private:
+    int capacity = 3;
+    vector<Product> stockTruck;
+
+public:
+    vector<Product> getStockTruck()
+    {
+        return stockTruck;
+    }
+    void fillTruck(vector<Product> products)
+    {
+        if (!products.empty())
+        {
+            for (int i = 0; i < capacity; i++)
+            {
+                if (!products.empty())
+                {
+                    Product temp = products.back();
+                    products.pop_back();
+                    stockTruck.push_back(temp);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    vector<Product> emptyTruck()
+    {
+        vector<Product> products = stockTruck;
+        int size = stockTruck.size();
+        for (int i = 0; i < size; i++)
+        {
+            this->stockTruck.pop_back();
+        }
+
+        return products;
+    }
+};
 
 
 class Storage {
@@ -139,11 +226,9 @@ public:
 
 class Refrigerator : public Storage {
 private:
-    float temperature = 5;
     vector<Product> productsVec;
 public:
     vector<Product> getProducts() { return productsVec; }
-    float getTemperature() { return this->temperature; }
     void addProduct(Product product) override
     {
         productsVec.push_back(product);
@@ -155,26 +240,13 @@ public:
             }
         }
     }
-
-    void setTemperature(float temperature) {
-        // set temperature only if it's within the allowed range for a refrigerator
-        if (temperature >= 0 && temperature <= 10) {
-            this->temperature = temperature;
-            // set the temperature for this refrigerator
-            cout << "Setting temperature for refrigerator: " << temperature << endl;
-        }
-    }
-
-
 };
 
 class Freezer : public Storage {
 private:
-    float temperature = -25;
     vector<Product> productsVec;
 public:
     vector<Product> getProducts() { return productsVec; }
-    float getTemperature() { return this->temperature; }
     void addProduct(Product product) override
     {
         productsVec.push_back(product);
@@ -184,15 +256,6 @@ public:
             if (productsVec[i].getName() == product.getName()) {
                 productsVec.erase(productsVec.begin() + i);
             }
-        }
-    }
-
-    void setTemperature(float temperature) {
-        // set temperature only if it's within the allowed range for a freezer
-        if (temperature <= -20) {
-            this->temperature = temperature;
-            // set the temperature for this freezer
-            cout << "Setting temperature for freezer: " << temperature << endl;
         }
     }
 };
@@ -216,29 +279,8 @@ public:
         freezer = Freezer();
     }
 
-    void setTemperatureFreezer(float temperature)
-    {
-        refrigerator.setTemperature(temperature);
-    }
-
-    void setTemperatureRefrigerator(float temperature)
-    {
-        freezer.setTemperature(temperature);
-    }
-
     vector<Shelf> getShelves() { return shelves; }
-    void addShelf(const Shelf& shelf)
-    {
-        shelves.push_back(shelf);
-    }
 
-    void removeShelf(Shelf shelf) {
-        for (int i = 0; i < shelves.size(); i++) {
-            if (shelves[i].getType() == shelf.getType()) {
-                shelves.erase(shelves.begin() + i);
-            }
-        }
-    }
     void nextDay()
     {
         vector<Product> productsFreezer = freezer.getProducts();
@@ -269,9 +311,6 @@ public:
     }
 
     void Take(const string& productName, const string& shelfType) {
-
-
-
         if (shelfType == "Freezer")
         {
             vector<Product> productsFreezer = freezer.getProducts();
@@ -507,7 +546,7 @@ public:
             cout << "Location: " << product.getLocation() << endl;
             cout << "Price: $" << product.getPrice() << endl;
             time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
-            tm tm;
+            tm tm{};
             localtime_r(&dueDate, &tm);
             stringstream dueDateStream;
             dueDateStream << put_time(&tm, "%c %Z");
@@ -550,8 +589,12 @@ public:
 };
 
 
+
 int main() {
     Supermarket supermarket;
+    Factory factory;
+    Truck truck;
+
     supermarket.createFreezer();
     supermarket.createRefrigerator();
     // open file for reading
@@ -584,7 +627,9 @@ int main() {
 
     string command;
     cout << "Enter a command or type 'help' for a list of commands" << endl;
-    while (true) {
+
+    while (true)
+    {
         cout << "> ";
         cin >> command;
 
@@ -592,6 +637,10 @@ int main() {
             cout << "Commands:" << endl;
             cout << "  view " << endl;
             cout << "  viewAllInfo " << endl;
+            cout << "  viewProductsFacSuperTruck " << endl;
+            cout << "  generateFactoryProduct " << endl;
+            cout << "  fillTruck " << endl;
+            cout << "  emptyTruck " << endl;
             cout << "  add " << endl;
             cout << "  take " << endl;
             cout << "  move " << endl;
@@ -604,8 +653,62 @@ int main() {
         else if (command == "viewAllInfo") {
             supermarket.viewAllInfo();
         }
+        else if (command == "viewProductsFacSuperTruck")
+        {
+            cout << "IN FACTORY:" << endl;
+            vector<Product> productsFactory = factory.getStock();
+            for (Product product : productsFactory) {
+                cout << "Product Name: " << product.getName() << endl;
+                cout << "Location: " << product.getLocation() << endl;
+                cout << "Price: $" << product.getPrice() << endl;
+                time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
+                tm tm{};
+                localtime_r(&dueDate, &tm);
+                stringstream dueDateStream;
+                dueDateStream << put_time(&tm, "%c %Z");
+                cout << "Due Date: " << dueDateStream.str() << endl;
+                cout << endl;
+            }
+            cout << "==============" << endl << endl;
+
+            cout << "IN TRUCK:" << endl;
+            vector<Product> productsTruck = truck.getStockTruck();
+            for (Product product : productsTruck) {
+                cout << "Product Name: " << product.getName() << endl;
+                cout << "Location: " << product.getLocation() << endl;
+                cout << "Price: $" << product.getPrice() << endl;
+                time_t dueDate = chrono::system_clock::to_time_t(product.getDueDate());
+                tm tm{};
+                localtime_r(&dueDate, &tm);
+                stringstream dueDateStream;
+                dueDateStream << put_time(&tm, "%c %Z");
+                cout << "Due Date: " << dueDateStream.str() << endl;
+                cout << endl;
+            }
+            cout << "==============" << endl << endl;
+
+            cout << "IN SUPERMARKET:" << endl;
+            supermarket.viewAllInfo();
+        }
+        else if (command == "generateFactoryProduct")
+        {
+            factory.generate(4);
+        }
+        else if (command == "fillTruck")
+        {
+            truck.fillTruck(factory.takeStock(3));
+        }
+        else if (command == "emptyTruck")
+        {
+            vector<Product> productsFromTruck = truck.emptyTruck();
+
+            for (Product product : productsFromTruck)
+            {
+                supermarket.Add(product, product.getLocation());
+            }
+        }
         else if (command == "add") {
-            cout << "Selecet the name: ";
+            cout << "Select the name: ";
             cin >> name;
 
             cout << "Select the location(Shelf, Freezer, Refrigerator): ";
@@ -705,11 +808,11 @@ int main() {
                     }
                 }
             }
-            else if (locationName == "Refrigetor")
+            else if (locationName == "Refrigerator")
             {
-                vector<Product> productsRefrigetor = supermarket.refrigerator.getProducts();
+                vector<Product> productsRefrigerator = supermarket.refrigerator.getProducts();
 
-                for (Product product : productsRefrigetor)
+                for (Product product : productsRefrigerator)
                 {
                     if (product.getName() == name)
                     {
